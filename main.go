@@ -13,12 +13,21 @@ import (
 var (
 	led1 *gpio.LedDriver
 	led2 *gpio.LedDriver
+
+	button1 *gpio.ButtonDriver
+	button2 *gpio.ButtonDriver
 )
 
 func Reset() {
 	fmt.Println("Reset the rooster.")
 	led1.Off()
 	led2.Off()
+}
+
+func LightsOn() {
+	fmt.Println("lights on!")
+	led1.On()
+	led2.On()
 }
 
 func main() {
@@ -32,14 +41,24 @@ func main() {
 	led1 = gpio.NewLedDriver(board, "6")
 	led2 = gpio.NewLedDriver(board, "7")
 
+	button1 = gpio.NewButtonDriver(board, "4")
+	button2 = gpio.NewButtonDriver(board, "5")
+
 	// digital devices
 	work := func() {
-		Reset()
+
+		button1.On(gpio.ButtonPush, func(data interface{}) {
+			Reset()
+		})
+
+		button2.On(gpio.ButtonPush, func(data interface{}) {
+			LightsOn()
+		})
 	}
 
 	robot := gobot.NewRobot("rooster",
 		[]gobot.Connection{board},
-		[]gobot.Device{led1, led2},
+		[]gobot.Device{led1, led2, button1, button2},
 		work,
 	)
 
