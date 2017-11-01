@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"gobot.io/x/gobot"
 	"gobot.io/x/gobot/api"
@@ -16,6 +17,8 @@ var (
 
 	button1 *gpio.ButtonDriver
 	button2 *gpio.ButtonDriver
+
+	receiverPin *gpio.DirectPinDriver
 )
 
 func Reset() {
@@ -44,9 +47,10 @@ func main() {
 	button1 = gpio.NewButtonDriver(board, "4")
 	button2 = gpio.NewButtonDriver(board, "5")
 
+	receiverPin = gpio.NewDirectPinDriver(board, "2")
+
 	// digital devices
 	work := func() {
-
 		button1.On(gpio.ButtonPush, func(data interface{}) {
 			Reset()
 		})
@@ -58,11 +62,30 @@ func main() {
 
 	robot := gobot.NewRobot("rooster",
 		[]gobot.Connection{board},
-		[]gobot.Device{led1, led2, button1, button2},
+		[]gobot.Device{led1, led2, button1, button2, receiverPin},
 		work,
 	)
 
 	master.AddRobot(robot)
 
+	go func() {
+		time.Sleep(10 * time.Second)
+		for {
+			if receiverPin != nil {
+				v, err := receiverPin.DigitalRead()
+				if err != nil {
+					fmt.Printf("d2 err: %v\n", err)
+					time.Sleep(1 * time.Second)
+				} else {
+					fmt.Printf("[%d]\n", v)
+					time.Sleep(100 * time.Millisecond)
+				}
+			} else {
+				fmt.Println("receiverPin is nil")
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}()
 	master.Start()
+
 }
